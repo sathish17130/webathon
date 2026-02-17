@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CompareX AI - Intelligent Comparison Engine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        .category-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .category-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .category-icon {
+            font-size: 3rem;
+            color: #667eea;
+        }
+        .hero-section {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        .hero-section h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .hero-section p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero-section">
+            <h1><i class="bi bi-graph-up-arrow"></i> CompareX AI</h1>
+            <p>Intelligent Comparison Engine - Find the Best Option for You</p>
+        </div>
+
+        <div class="row g-4">
+            {% for category in categories %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card category-card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="category-icon mb-3">
+                            {% if category.name == "Laptops" %}
+                                <i class="bi bi-laptop"></i>
+                            {% elif category.name == "Phones" %}
+                                <i class="bi bi-phone"></i>
+                            {% elif category.name == "Courses" %}
+                                <i class="bi bi-book"></i>
+                            {% elif category.name == "Hostels" %}
+                                <i class="bi bi-building"></i>
+                            {% else %}
+                                <i class="bi bi-grid"></i>
+                            {% endif %}
+                        </div>
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        <p class="card-text text-muted small">
+                            {{ category.spec_fields.count }} spec{{ category.spec_fields.count|pluralize }} defined
+                        </p>
+                        <a href="{% url 'core:compare' category.id %}" class="btn btn-primary w-100">
+                            Compare <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> No categories available. Please add categories via Django admin.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

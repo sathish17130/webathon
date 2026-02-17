@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare - {{ category.name }} | CompareX AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        .main-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .spec-pill {
+            font-size: 0.85rem;
+            background: rgba(102, 126, 234, 0.1);
+            color: #3b4cca;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 0.25rem 0.5rem;
+            border-radius: 999px;
+            margin: 0.15rem 0.15rem 0 0;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <a href="{% url 'core:home' %}" class="btn btn-light mb-3">
+                    <i class="bi bi-arrow-left"></i> Back to Categories
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card main-card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="bi bi-sliders"></i> {{ category.name }} Specification Comparison</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if not spec_fields %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No specifications are defined for <strong>{{ category.name }}</strong> yet.
+                            Ask the admin to add <code>SpecificationField</code> entries in the admin panel.
+                        </div>
+                        {% else %}
+                        <div class="mb-3">
+                            <div class="text-muted small mb-2">Specs defined by admin:</div>
+                            {% for sf in spec_fields %}
+                                <span class="spec-pill">{{ sf.name }} {% if sf.field_type == "number" %}(w={{ sf.weight }}){% else %}(text){% endif %}</span>
+                            {% endfor %}
+                        </div>
+
+                        {% if error %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" novalidate>
+                            {% csrf_token %}
+                            {{ formset.management_form }}
+
+                            <!-- User preference filters -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-lg-4">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body">
+                                            <h6 class="mb-3"><i class="bi bi-wallet2"></i> Budget filter</h6>
+                                            {{ pref_form.budget }}
+                                            <div class="text-muted small mt-2">{{ pref_form.budget.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body">
+                                            <h6 class="mb-3"><i class="bi bi-sliders"></i> Weight sliders (your preferences)</h6>
+                                            <div class="row g-3">
+                                                {% for sf in numeric_spec_fields %}
+                                                    {% with field_name="weight__"|add:sf.name %}
+                                                        {% with wf=pref_form|form_field:field_name %}
+                                                        <div class="col-md-6">
+                                                            <label class="form-label d-flex justify-content-between align-items-center">
+                                                                <span><strong>{{ sf.name|title }}</strong></span>
+                                                                <span class="badge bg-white text-dark border">
+                                                                    <span data-weight-label="{{ sf.name }}">0</span>/100
+                                                                </span>
+                                                            </label>
+                                                            {{ wf }}
+                                                            <div class="text-muted small">{{ wf.help_text }}</div>
+                                                        </div>
+                                                        {% endwith %}
+                                                    {% endwith %}
+                                                {% endfor %}
+                                            </div>
+                                            <div class="text-muted small mt-2">
+                                                Higher slider = that spec matters more in scoring. For <code>price</code>, lower is treated as better automatically.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 220px;">Item Name</th>
+                                            {% for sf in spec_fields %}
+                                                <th style="min-width: 180px;">
+                                                    {{ sf.name|title }}
+                                                    {% if sf.field_type == "number" %}
+                                                        <div class="text-muted small">weight: {{ sf.weight }}</div>
+                                                    {% else %}
+                                                        <div class="text-muted small">text</div>
+                                                    {% endif %}
+                                                </th>
+                                            {% endfor %}
+                                            <th style="min-width: 110px;">Remove</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="itemsTbody">
+                                        {% for form in formset.forms %}
+                                        <tr class="item-row">
+                                            <td>
+                                                {{ form.item_name }}
+                                                {% if form.item_name.errors %}
+                                                    <div class="text-danger small">{{ form.item_name.errors|striptags }}</div>
+                                                {% endif %}
+                                            </td>
+                                            {% for sf in spec_fields %}
+                                            <td>
+                                                {% with bf=form|form_field:sf.name %}
+                                                    {{ bf }}
+                                                    {% if bf.errors %}
+                                                        <div class="text-danger small">{{ bf.errors|striptags }}</div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            {% endfor %}
+                                            <td class="text-center">
+                                                {{ form.DELETE }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-between flex-wrap">
+                                <button type="button" class="btn btn-outline-secondary" id="addItemBtn">
+                                    <i class="bi bi-plus-circle"></i> Add another item
+                                </button>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-bar-chart-line"></i> Analyze Best {{ category.name }}
+                                </button>
+                            </div>
+
+                            <div class="text-muted small mt-3">
+                                Tip: numeric specs contribute to score using <strong>your sliders</strong>. Text specs are shown in the table but not scored.
+                            </div>
+
+                            <!-- Empty form template for JS cloning -->
+                            <template id="emptyFormTemplate">
+                                <tr class="item-row">
+                                    <td>__ITEM_NAME__</td>
+                                    {% for sf in spec_fields %}
+                                        <td>__SPEC_{{ sf.name }}__</td>
+                                    {% endfor %}
+                                    <td class="text-center">__DELETE__</td>
+                                </tr>
+                            </template>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Dynamic add-row using Django formset management fields
+        const addBtn = document.getElementById('addItemBtn');
+        const tbody = document.getElementById('itemsTbody');
+        const totalFormsInput = document.getElementById('id_form-TOTAL_FORMS');
+
+        function cloneEmptyFormRow() {
+            const formIndex = parseInt(totalFormsInput.value, 10);
+
+            // Build a row by cloning the last row and clearing values
+            // (Simple approach: duplicate last row markup and update indices)
+            const lastRow = tbody.querySelector('tr.item-row:last-child');
+            if (!lastRow) return;
+            const newRow = lastRow.cloneNode(true);
+
+            // Update all input/select/textarea names/ids
+            newRow.querySelectorAll('input, select, textarea').forEach((el) => {
+                if (el.name) {
+                    el.name = el.name.replace(/form-(\\d+)-/g, `form-${formIndex}-`);
+                }
+                if (el.id) {
+                    el.id = el.id.replace(/form-(\\d+)-/g, `form-${formIndex}-`);
+                }
+                if (el.type === 'checkbox') {
+                    el.checked = false;
+                } else {
+                    el.value = '';
+                }
+            });
+
+            // Clear any error messages
+            newRow.querySelectorAll('.text-danger').forEach((el) => el.remove());
+
+            tbody.appendChild(newRow);
+            totalFormsInput.value = formIndex + 1;
+        }
+
+        if (addBtn && tbody && totalFormsInput) {
+            addBtn.addEventListener('click', cloneEmptyFormRow);
+        }
+
+        // Slider value labels
+        document.querySelectorAll('.weight-slider').forEach((slider) => {
+            const spec = slider.getAttribute('data-spec') || '';
+            const label = document.querySelector(`[data-weight-label="${spec}"]`);
+            const update = () => {
+                if (label) label.textContent = slider.value;
+            };
+            slider.addEventListener('input', update);
+            update();
+        });
+    </script>
+</body>
+</html>
