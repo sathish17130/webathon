@@ -43,7 +43,7 @@
             <div class="col-12 mb-4">
                 <div class="card main-card">
                     <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0"><i class="bi bi-sliders"></i> {{ category.name }} Specification Comparison</h4>
+                        <h4 class="mb-0"><i class="bi bi-sliders"></i> {{ category.name }} Purpose-Based Recommendation</h4>
                     </div>
                     <div class="card-body">
                         {% if not spec_fields %}
@@ -56,7 +56,7 @@
                         <div class="mb-3">
                             <div class="text-muted small mb-2">Specs defined by admin:</div>
                             {% for sf in spec_fields %}
-                                <span class="spec-pill">{{ sf.name }} {% if sf.field_type == "number" %}(w={{ sf.weight }}){% else %}(text){% endif %}</span>
+                                <span class="spec-pill">{{ sf.name }} {% if sf.field_type == "number" %}(numeric){% else %}(text){% endif %}</span>
                             {% endfor %}
                         </div>
 
@@ -70,91 +70,127 @@
                             {% csrf_token %}
                             {{ formset.management_form }}
 
-                            <!-- User preference filters -->
-                            <div class="row g-3 mb-4">
-                                <div class="col-lg-4">
-                                    <div class="card border-0 bg-light">
-                                        <div class="card-body">
-                                            <h6 class="mb-3"><i class="bi bi-wallet2"></i> Budget filter</h6>
-                                            {{ pref_form.budget }}
-                                            <div class="text-muted small mt-2">{{ pref_form.budget.help_text }}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="card border-0 bg-light">
-                                        <div class="card-body">
-                                            <h6 class="mb-3"><i class="bi bi-sliders"></i> Weight sliders (your preferences)</h6>
-                                            <div class="row g-3">
-                                                {% for sf in numeric_spec_fields %}
-                                                    {% with field_name="weight__"|add:sf.name %}
-                                                        {% with wf=pref_form|form_field:field_name %}
-                                                        <div class="col-md-6">
-                                                            <label class="form-label d-flex justify-content-between align-items-center">
-                                                                <span><strong>{{ sf.name|title }}</strong></span>
-                                                                <span class="badge bg-white text-dark border">
-                                                                    <span data-weight-label="{{ sf.name }}">0</span>/100
-                                                                </span>
-                                                            </label>
-                                                            {{ wf }}
-                                                            <div class="text-muted small">{{ wf.help_text }}</div>
-                                                        </div>
-                                                        {% endwith %}
-                                                    {% endwith %}
-                                                {% endfor %}
-                                            </div>
-                                            <div class="text-muted small mt-2">
-                                                Higher slider = that spec matters more in scoring. For <code>price</code>, lower is treated as better automatically.
-                                            </div>
+                            <!-- Purpose Selection -->
+                            <div class="card border-0 bg-light mb-4">
+                                <div class="card-body">
+                                    <h6 class="mb-3"><i class="bi bi-bullseye"></i> Purpose of Use</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            {{ purpose_form.purpose.label_tag }}
+                                            {{ purpose_form.purpose }}
+                                            {% if purpose_form.purpose.errors %}
+                                                <div class="text-danger small">{{ purpose_form.purpose.errors|striptags }}</div>
+                                            {% endif %}
+                                            <div class="text-muted small mt-2">{{ purpose_form.purpose.help_text }}</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th style="min-width: 220px;">Item Name</th>
-                                            {% for sf in spec_fields %}
-                                                <th style="min-width: 180px;">
-                                                    {{ sf.name|title }}
-                                                    {% if sf.field_type == "number" %}
-                                                        <div class="text-muted small">weight: {{ sf.weight }}</div>
-                                                    {% else %}
-                                                        <div class="text-muted small">text</div>
-                                                    {% endif %}
-                                                </th>
-                                            {% endfor %}
-                                            <th style="min-width: 110px;">Remove</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="itemsTbody">
-                                        {% for form in formset.forms %}
-                                        <tr class="item-row">
-                                            <td>
-                                                {{ form.item_name }}
-                                                {% if form.item_name.errors %}
-                                                    <div class="text-danger small">{{ form.item_name.errors|striptags }}</div>
+                            <!-- Requirement Filters -->
+                            <div class="card border-0 bg-light mb-4">
+                                <div class="card-body">
+                                    <h6 class="mb-3"><i class="bi bi-funnel"></i> Requirement Filters</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            {{ purpose_form.min_budget.label_tag }}
+                                            {{ purpose_form.min_budget }}
+                                            {% if purpose_form.min_budget.errors %}
+                                                <div class="text-danger small">{{ purpose_form.min_budget.errors|striptags }}</div>
+                                            {% endif %}
+                                            <div class="text-muted small mt-1">{{ purpose_form.min_budget.help_text }}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ purpose_form.max_budget.label_tag }}
+                                            {{ purpose_form.max_budget }}
+                                            {% if purpose_form.max_budget.errors %}
+                                                <div class="text-danger small">{{ purpose_form.max_budget.errors|striptags }}</div>
+                                            {% endif %}
+                                            <div class="text-muted small mt-1">{{ purpose_form.max_budget.help_text }}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ purpose_form.min_ram.label_tag }}
+                                            {{ purpose_form.min_ram }}
+                                            {% if purpose_form.min_ram.errors %}
+                                                <div class="text-danger small">{{ purpose_form.min_ram.errors|striptags }}</div>
+                                            {% endif %}
+                                            <div class="text-muted small mt-1">{{ purpose_form.min_ram.help_text }}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ purpose_form.min_ssd.label_tag }}
+                                            {{ purpose_form.min_ssd }}
+                                            {% if purpose_form.min_ssd.errors %}
+                                                <div class="text-danger small">{{ purpose_form.min_ssd.errors|striptags }}</div>
+                                            {% endif %}
+                                            <div class="text-muted small mt-1">{{ purpose_form.min_ssd.help_text }}</div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-check">
+                                                {{ purpose_form.optional_gpu_required }}
+                                                {{ purpose_form.optional_gpu_required.label_tag }}
+                                                {% if purpose_form.optional_gpu_required.errors %}
+                                                    <div class="text-danger small">{{ purpose_form.optional_gpu_required.errors|striptags }}</div>
                                                 {% endif %}
-                                            </td>
-                                            {% for sf in spec_fields %}
-                                            <td>
-                                                {% with bf=form|form_field:sf.name %}
-                                                    {{ bf }}
-                                                    {% if bf.errors %}
-                                                        <div class="text-danger small">{{ bf.errors|striptags }}</div>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            </td>
-                                            {% endfor %}
-                                            <td class="text-center">
-                                                {{ form.DELETE }}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                                                <div class="text-muted small mt-1">{{ purpose_form.optional_gpu_required.help_text }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small mt-3">
+                                        <i class="bi bi-info-circle"></i> Items that don't meet these requirements will be filtered out before scoring.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Product Input Section -->
+                            <div class="card border-0 bg-light mb-4">
+                                <div class="card-body">
+                                    <h6 class="mb-3"><i class="bi bi-box-seam"></i> Product Input</h6>
+                                    <div class="table-responsive">
+                                        <table class="table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th style="min-width: 220px;">Item Name</th>
+                                                    {% for sf in spec_fields %}
+                                                        <th style="min-width: 180px;">
+                                                            {{ sf.name|title }}
+                                                            {% if sf.field_type == "number" %}
+                                                                <div class="text-muted small">numeric</div>
+                                                            {% else %}
+                                                                <div class="text-muted small">text</div>
+                                                            {% endif %}
+                                                        </th>
+                                                    {% endfor %}
+                                                    <th style="min-width: 110px;">Remove</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="itemsTbody">
+                                                {% for form in formset.forms %}
+                                                <tr class="item-row">
+                                                    <td>
+                                                        {{ form.item_name }}
+                                                        {% if form.item_name.errors %}
+                                                            <div class="text-danger small">{{ form.item_name.errors|striptags }}</div>
+                                                        {% endif %}
+                                                    </td>
+                                                    {% for sf in spec_fields %}
+                                                    <td>
+                                                        {% with bf=form|form_field:sf.name %}
+                                                            {{ bf }}
+                                                            {% if bf.errors %}
+                                                                <div class="text-danger small">{{ bf.errors|striptags }}</div>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    </td>
+                                                    {% endfor %}
+                                                    <td class="text-center">
+                                                        {{ form.DELETE }}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="d-flex gap-2 justify-content-between flex-wrap">
@@ -162,24 +198,13 @@
                                     <i class="bi bi-plus-circle"></i> Add another item
                                 </button>
                                 <button type="submit" class="btn btn-success btn-lg">
-                                    <i class="bi bi-bar-chart-line"></i> Analyze Best {{ category.name }}
+                                    <i class="bi bi-bar-chart-line"></i> Get Recommendation
                                 </button>
                             </div>
 
                             <div class="text-muted small mt-3">
-                                Tip: numeric specs contribute to score using <strong>your sliders</strong>. Text specs are shown in the table but not scored.
+                                <i class="bi bi-lightbulb"></i> Tip: The system will filter items based on your requirements, then score them using purpose-based weights. AI will explain why the best option matches your needs.
                             </div>
-
-                            <!-- Empty form template for JS cloning -->
-                            <template id="emptyFormTemplate">
-                                <tr class="item-row">
-                                    <td>__ITEM_NAME__</td>
-                                    {% for sf in spec_fields %}
-                                        <td>__SPEC_{{ sf.name }}__</td>
-                                    {% endfor %}
-                                    <td class="text-center">__DELETE__</td>
-                                </tr>
-                            </template>
                         </form>
                         {% endif %}
                     </div>
@@ -199,7 +224,6 @@
             const formIndex = parseInt(totalFormsInput.value, 10);
 
             // Build a row by cloning the last row and clearing values
-            // (Simple approach: duplicate last row markup and update indices)
             const lastRow = tbody.querySelector('tr.item-row:last-child');
             if (!lastRow) return;
             const newRow = lastRow.cloneNode(true);
@@ -207,10 +231,10 @@
             // Update all input/select/textarea names/ids
             newRow.querySelectorAll('input, select, textarea').forEach((el) => {
                 if (el.name) {
-                    el.name = el.name.replace(/form-(\\d+)-/g, `form-${formIndex}-`);
+                    el.name = el.name.replace(/form-(\d+)-/g, `form-${formIndex}-`);
                 }
                 if (el.id) {
-                    el.id = el.id.replace(/form-(\\d+)-/g, `form-${formIndex}-`);
+                    el.id = el.id.replace(/form-(\d+)-/g, `form-${formIndex}-`);
                 }
                 if (el.type === 'checkbox') {
                     el.checked = false;
@@ -229,17 +253,6 @@
         if (addBtn && tbody && totalFormsInput) {
             addBtn.addEventListener('click', cloneEmptyFormRow);
         }
-
-        // Slider value labels
-        document.querySelectorAll('.weight-slider').forEach((slider) => {
-            const spec = slider.getAttribute('data-spec') || '';
-            const label = document.querySelector(`[data-weight-label="${spec}"]`);
-            const update = () => {
-                if (label) label.textContent = slider.value;
-            };
-            slider.addEventListener('input', update);
-            update();
-        });
     </script>
 </body>
 </html>

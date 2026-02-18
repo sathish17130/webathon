@@ -1,275 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results | CompareX AI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 2rem 0;
-        }
-        .main-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 2rem;
-        }
-        .best-item-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 15px;
-        }
-        .badge-best {
-            background-color: #ffc107;
-            color: #000;
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-        }
-        .ai-explanation {
-            background-color: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 1.5rem;
-            border-radius: 8px;
-            white-space: pre-wrap;
-        }
-        .score-badge {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Results | CompareX AI</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+body {
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    min-height:100vh;
+    padding:2rem 0;
+}
+.main-card{
+    border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom:2rem;
+}
+.best-item-card{
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:white;
+    border-radius:15px;
+}
+.ai-explanation{
+    background:#f8f9fa;
+    border-left:4px solid #667eea;
+    padding:1.5rem;
+    border-radius:8px;
+    white-space:pre-wrap;
+}
+.score-badge{
+    font-size:1.5rem;
+    font-weight:bold;
+}
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="row mb-4">
-            <div class="col-12">
-                <a href="{% url 'core:home' %}" class="btn btn-light mb-3">
-                    <i class="bi bi-arrow-left"></i> Back to Categories
-                </a>
-            </div>
-        </div>
+<div class="container">
 
-        {% if error %}
-        <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle"></i> {{ error }}
-        </div>
-        {% else %}
+<a href="{% url 'core:home' %}" class="btn btn-light mb-3">
+<i class="bi bi-arrow-left"></i> Back
+</a>
 
-        <!-- Best Recommendation Card -->
-        {% if best_item %}
-        <div class="card main-card best-item-card">
-            <div class="card-body p-4">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <span class="badge badge-best mb-3">
-                            <i class="bi bi-trophy-fill"></i> BEST RECOMMENDATION
-                        </span>
-                        <h2 class="mb-3">{{ best_item.item_name }}</h2>
-                        <div class="text-white-50 small mb-2">Top specs (as entered)</div>
-                        <div class="row g-2">
-                            {% for sf in spec_fields %}
-                                <div class="col-6 col-md-4">
-                                    <div class="text-white-50 small">{{ sf.name }}</div>
-                                    <div class="h6 mb-0">
-                                        {{ best_item.specifications|get_item:sf.name }}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <div class="score-badge text-white mb-2">Score</div>
-                        <div class="display-1 fw-bold text-white">
-                            {% for item, score in ranked_items %}
-                                {% if item.id == best_item.id %}
-                                    {{ score }}
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                        <div class="text-white-50">weighted spec score</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% else %}
 
-        <!-- AI Explanation -->
-        <div class="card main-card">
-            <div class="card-header bg-info text-white">
-                <h4 class="mb-0"><i class="bi bi-robot"></i> AI Explanation</h4>
-            </div>
-            <div class="card-body">
-                <div class="ai-explanation">{{ ai_explanation }}</div>
-            </div>
-        </div>
+<!-- PURPOSE -->
+<div class="card main-card">
+<div class="card-body">
+<strong>Purpose:</strong> {{ purpose_display }}
+</div>
+</div>
 
-        <!-- Comparison Chart -->
-        <div class="card main-card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="bi bi-bar-chart"></i> Comparison Chart</h4>
-            </div>
-            <div class="card-body">
-                <canvas id="comparisonChart" height="100"></canvas>
-            </div>
-        </div>
 
-        <!-- Ranking Table -->
-        <div class="card main-card">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="bi bi-list-ol"></i> Complete Ranking</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Item Name</th>
-                                {% for sf in spec_fields %}
-                                    <th>{{ sf.name }}</th>
-                                {% endfor %}
-                                <th class="text-end">Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in result_rows %}
-                            <tr {% if row.item.id == best_item.id %}class="table-success"{% endif %}>
-                                <td>
-                                    {% if row.item.id == best_item.id %}
-                                        <span class="badge bg-warning text-dark">#1</span>
-                                    {% else %}
-                                        #{{ forloop.counter }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <strong>{{ row.item.item_name }}</strong>
-                                    {% if row.item.id == best_item.id %}
-                                        <span class="badge bg-success ms-2">Best</span>
-                                    {% endif %}
-                                </td>
-                                {% for sf in spec_fields %}
-                                    <td>{{ row.specs|get_item:sf.name }}</td>
-                                {% endfor %}
-                                <td class="text-end">
-                                    <span class="badge bg-primary score-badge">{{ row.score }}</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<!-- BEST CARD -->
+{% if best_item %}
+<div class="card main-card best-item-card">
+<div class="card-body p-4">
+<div class="row align-items-center">
 
-        <!-- Admin-defined Weights Summary -->
-        <div class="card main-card">
-            <div class="card-header bg-secondary text-white">
-                <h4 class="mb-0"><i class="bi bi-gear"></i> Filters & Weights Used</h4>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <div class="text-muted small">Budget</div>
-                    <div><strong>{% if budget %}{{ budget }}{% else %}No budget filter{% endif %}</strong></div>
-                </div>
-                <div class="row g-2">
-                    {% for sf in spec_fields %}
-                        <div class="col-6 col-md-3">
-                            <div class="text-muted small">{{ sf.name }}</div>
-                            <div>
-                                <strong>
-                                    {% if sf.field_type == "number" %}
-                                        {{ user_weights|get_item:sf.name }}
-                                    {% else %}
-                                        text
-                                    {% endif %}
-                                </strong>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-                <div class="text-muted small mt-3">
-                    Only numeric specs contribute to score using your slider weights (0–100). Text specs are displayed for comparison.
-                </div>
-            </div>
-        </div>
+<div class="col-md-8">
 
-        {% endif %}
+<span class="badge bg-warning text-dark mb-2">
+<i class="bi bi-trophy-fill"></i>
+{% if top_group and top_group|length > 1 %}
+TOP MATCH
+{% else %}
+BEST RECOMMENDATION
+{% endif %}
+</span>
+
+<h2>{{ best_item.item_name }}</h2>
+
+<div class="row mt-3">
+{% for sf in spec_fields %}
+<div class="col-md-4">
+<small class="text-white-50">{{ sf.name|title }}</small>
+<div>{{ best_item.specifications|get_item:sf.name }}</div>
+</div>
+{% endfor %}
+</div>
+
+</div>
+
+<div class="col-md-4 text-center">
+<div class="display-4 fw-bold">
+{% for item,score in ranked_items %}
+{% if item.id == best_item.id %}
+{{ score }}
+{% endif %}
+{% endfor %}
+</div>
+<div>Score</div>
+</div>
+
+</div>
+</div>
+</div>
+{% endif %}
+{% if top_group and top_group|length > 1 %}
+<div class="card main-card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h4 class="mb-0">
+            <i class="bi bi-lightning-charge-fill"></i>
+            Top Matches (Very Similar Performance)
+        </h4>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Chart.js configuration
-        const ctx = document.getElementById('comparisonChart');
-        {% if chart_labels and chart_scores %}
-        if (ctx) {
-            const chartData = {
-                labels: {{ chart_labels|safe }},
-                datasets: [{
-                    label: 'Comparison Score',
-                    data: {{ chart_scores|safe }},
-                    backgroundColor: [
-                        'rgba(102, 126, 234, 0.8)',
-                        'rgba(118, 75, 162, 0.8)',
-                        'rgba(255, 193, 7, 0.8)',
-                        'rgba(40, 167, 69, 0.8)',
-                        'rgba(220, 53, 69, 0.8)',
-                        'rgba(23, 162, 184, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(102, 126, 234, 1)',
-                        'rgba(118, 75, 162, 1)',
-                        'rgba(255, 193, 7, 1)',
-                        'rgba(40, 167, 69, 1)',
-                        'rgba(220, 53, 69, 1)',
-                        'rgba(23, 162, 184, 1)'
-                    ],
-                    borderWidth: 2
-                }]
-            };
+    <div class="card-body">
 
-            new Chart(ctx, {
-                type: 'bar',
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Score (0-100)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Items'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Score: ' + context.parsed.y.toFixed(2);
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        <p class="mb-3">
+            These laptops match your needs almost equally.
+        </p>
+
+        {% if tradeoff_text %}
+        <div class="alert alert-info">
+            {{ tradeoff_text }}
+        </div>
         {% endif %}
-    </script>
+
+        <div class="row">
+            {% for item, score in top_group %}
+            <div class="col-md-6 mb-3">
+                <div class="card border-primary h-100">
+                    <div class="card-body">
+
+                        <h5>{{ item.item_name }}</h5>
+                        <div class="mb-2">
+                            <strong>Score:</strong> {{ score }}
+                        </div>
+
+                        <table class="table table-sm">
+                            {% for key, value in item.specifications.items %}
+                            <tr>
+                                <td>{{ key }}</td>
+                                <td class="text-end">{{ value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endif %}
+
+
+
+
+
+
+<!-- AI -->
+<div class="card main-card">
+<div class="card-header bg-info text-white">
+<h5><i class="bi bi-robot"></i> AI Explanation</h5>
+</div>
+<div class="card-body">
+<div class="ai-explanation">{{ ai_explanation }}</div>
+</div>
+</div>
+
+
+<!-- CHART -->
+<div class="card main-card">
+<div class="card-header bg-primary text-white">
+<h5>Comparison Chart</h5>
+</div>
+<div class="card-body">
+<canvas id="chart"></canvas>
+</div>
+</div>
+
+
+<!-- COMPARISON TABLE -->
+<div class="card main-card">
+<div class="card-header bg-success text-white">
+<h5>Full Comparison</h5>
+</div>
+<div class="card-body">
+
+<div class="table-responsive">
+<table class="table table-hover">
+<thead>
+<tr>
+<th>Rank</th>
+<th>Item</th>
+{% for sf in spec_fields %}
+<th>{{ sf.name|title }}</th>
+{% endfor %}
+<th>Score</th>
+</tr>
+</thead>
+
+<tbody>
+{% for row in result_rows %}
+<tr {% if row.item.id == best_item.id %}class="table-success"{% endif %}>
+
+<td>
+{% if row.item.id == best_item.id %}
+<span class="badge bg-warning text-dark">#1</span>
+{% else %}
+#{{ forloop.counter }}
+{% endif %}
+</td>
+
+<td>
+<strong>{{ row.item.item_name }}</strong>
+{% if row.item.id == best_item.id %}
+<span class="badge bg-success ms-2">Best</span>
+{% endif %}
+</td>
+
+{% for sf in spec_fields %}
+<td>{{ row.specs|get_item:sf.name }}</td>
+{% endfor %}
+
+<td>
+<span class="badge bg-primary">{{ row.score }}</span>
+</td>
+
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+</div>
+</div>
+
+{% endif %}
+</div>
+
+<script>
+const labels = {{ chart_labels|safe }};
+const scores = {{ chart_scores|safe }};
+
+if(labels.length){
+new Chart(document.getElementById("chart"),{
+type:"bar",
+data:{labels:labels,datasets:[{data:scores}]}
+});
+}
+</script>
+
 </body>
 </html>
