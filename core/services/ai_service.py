@@ -17,7 +17,7 @@ def get_ai_explanation(prompt_text):
 
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt_text}]}],
-        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 200},
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 1000},
     }
 
     try:
